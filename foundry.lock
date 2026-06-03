@@ -1,0 +1,23 @@
+{
+  "lib/dss-test": {
+    "rev": "61cf29fc0cf0c177a3b4072b433c43a7326ccd7b"
+  },
+  "lib/forge-std": {
+    "tag": {
+      "name": "v1.16.1",
+      "rev": "620536fa5277db4e3fd46772d5cbc1ea0696fb43"
+    }
+  },
+  "lib/spark-alm-controller": {
+    "tag": {
+      "name": "v1.10.0",
+      "rev": "984ec546fb2c98ed729ae91d2d73e97dedbf111f"
+    }
+  },
+  "lib/spark-vaults-v2": {
+    "tag": {
+      "name": "v1.0.1",
+      "rev": "0a686ba2fcf874bc1542171a323779ba73ac2dc5"
+    }
+  }
+}
