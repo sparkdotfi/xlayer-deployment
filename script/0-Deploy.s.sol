@@ -5,6 +5,9 @@ import { ScriptTools } from "../lib/dss-test/src/ScriptTools.sol";
 
 import { Script, stdJson } from "../lib/forge-std/src/Script.sol";
 
+import { ALMProxy }   from "../lib/spark-alm-controller/src/ALMProxy.sol";
+import { RateLimits } from "../lib/spark-alm-controller/src/RateLimits.sol";
+
 import { ControllerInstance }      from "../lib/spark-alm-controller/deploy/ControllerInstance.sol";
 import { ForeignControllerDeploy } from "../lib/spark-alm-controller/deploy/ControllerDeploy.sol";
 
@@ -127,4 +130,3 @@ contract DeploySparkVaultProxy is Script {
     }
 
 }
-
