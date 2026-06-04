@@ -45,18 +45,18 @@ contract Configure is Script {
 
     address internal constant DEPLOYER     = 0xB328BD52B61768DD525cF209ab6C1Ac688dcC547;
     address internal constant EXECUTOR     = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
-    address internal constant FREEZER      = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
+    address internal constant FREEZER      = 0x0ca8f938Aba2214eA11eb451e795A8ef7B720C18;
     address internal constant PL_OPS_SAFE  = 0x59C85fe4385403e93877e48e5521f2F02B150359;
-    address internal constant RELAYER_1    = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
-    address internal constant RELAYER_2    = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
+    address internal constant RELAYER_1    = 0x59C85fe4385403e93877e48e5521f2F02B150359;
+    address internal constant RELAYER_2    = 0x0ca8f938Aba2214eA11eb451e795A8ef7B720C18;
 
-    address internal constant SPUSDG_VAULT = 0x417bb610b14edF20f1357E159459DD4092E59a95;
+    address internal constant SPUSDG_VAULT = 0xde770c84FE66E063336b31737cFE9790f18c4087;
 
-    address internal constant ALM_PROXY       = 0x417bb610b14edF20f1357E159459DD4092E59a95;
-    address internal constant ALM_RATE_LIMITS = 0x417bb610b14edF20f1357E159459DD4092E59a95;
-    address internal constant ALM_CONTROLLER  = 0x417bb610b14edF20f1357E159459DD4092E59a95;
+    address internal constant ALM_PROXY       = 0xfD2fD4B046136B540A56C11c75ac679AE7d1dB24;
+    address internal constant ALM_RATE_LIMITS = 0x5c1fDE9d4C7f1BF4bc5dEAA2a7752e56232c68a0;
+    address internal constant ALM_CONTROLLER  = 0xcf8d58A6eeF2a1cae2Ce69bC463b1178FB76bA1E;
 
-    address internal constant MORPHO_USDG_VAULT = 0x417bb610b14edF20f1357E159459DD4092E59a95;
+    address internal constant MORPHO_USDG_VAULT = 0x417bb610b14edF20f1357E159459DD4092E59a95;  // TODO change this
 
     // > bc -l <<< 'scale=27; e( l(1.06)/(60 * 60 * 24 * 365) )'
     //   1.000000001847694957439350562
