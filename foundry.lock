@@ -8,6 +8,9 @@
       "rev": "620536fa5277db4e3fd46772d5cbc1ea0696fb43"
     }
   },
+  "lib/spark-address-registry": {
+    "rev": "b1564bfd8a32f5fc1125258976beb86c8f13725e"
+  },
   "lib/spark-alm-controller": {
     "tag": {
       "name": "v1.10.0",
