@@ -11,7 +11,7 @@ import { Ethereum } from "../lib/spark-address-registry/src/Ethereum.sol";
 
 import { IALMProxy }         from "../lib/spark-alm-controller/src/interfaces/IALMProxy.sol";
 import { IRateLimits }       from "../lib/spark-alm-controller/src/interfaces/IRateLimits.sol";
-import { MainnetController } from "../lib/spark-alm-controller/src/MainnetController.sol";
+import { ForeignController } from "../lib/spark-alm-controller/src/ForeignController.sol";
 import { RateLimitHelpers }  from "../lib/spark-alm-controller/src/RateLimitHelpers.sol";
 
 import { IERC20Metadata } from "../lib/spark-vaults-v2/lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -76,7 +76,7 @@ contract Configure is Script {
         // Configure Legacy PAU ratelimits to deposit and withdraw from Spark Vault
         ISparkVaultV2     vault      = ISparkVaultV2(SPUSDG_VAULT);
         IRateLimits       rateLimits = IRateLimits(ALM_RATE_LIMITS);
-        MainnetController controller = MainnetController(ALM_CONTROLLER);
+        ForeignController controller = ForeignController(ALM_CONTROLLER);
 
         rateLimits.setUnlimitedRateLimitData(
             RateLimitHelpers.makeAddressKey(

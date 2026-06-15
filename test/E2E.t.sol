@@ -8,7 +8,7 @@ import { IERC4626 } from "../lib/forge-std/src/interfaces/IERC4626.sol";
 import { Ethereum } from "../lib/spark-address-registry/src/Ethereum.sol";
 
 import { ALMProxy }          from "../lib/spark-alm-controller/src/ALMProxy.sol";
-import { MainnetController } from "../lib/spark-alm-controller/src/MainnetController.sol";
+import { ForeignController } from "../lib/spark-alm-controller/src/ForeignController.sol";
 import { RateLimits }        from "../lib/spark-alm-controller/src/RateLimits.sol";
 import { RateLimitHelpers }  from "../lib/spark-alm-controller/src/RateLimitHelpers.sol";
 
@@ -35,7 +35,7 @@ contract E2ETests is Test {
     address internal USER = makeAddr("user1");
 
     ALMProxy          internal almProxy;
-    MainnetController internal controller;
+    ForeignController internal controller;
     RateLimits        internal rateLimits;
     SparkVault        internal spusdgVault;
 
@@ -48,12 +48,16 @@ contract E2ETests is Test {
     uint256 internal constant SIX_PCT_APY = 1.000000001847694957439350562e27;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ROBINHOOD_RPC_URL"));
+        vm.createSelectFork(vm.envString("ROBINHOOD_RPC_URL"), _getBlock());
 
         almProxy    = ALMProxy(payable(ALM_PROXY));
-        controller  = MainnetController(CONTROLLER);
+        controller  = ForeignController(CONTROLLER);
         rateLimits  = RateLimits(RATE_LIMITS);
         spusdgVault = SparkVault(SPUSDG_VAULT);
+    }
+
+    function _getBlock() internal pure returns (uint256) {
+        return 59093;  // June 16, 2026
     }
 
     function test_boundary_depositCap() external {
@@ -135,9 +139,8 @@ contract E2ETests is Test {
         assertEq(spusdgVault.totalAssets(), depositAmount + 8.01e6);
 
         // Step 2: Controller takes USDG from the SPUSDG Vault
-        vm.startPrank(RELAYER_1);
+        vm.prank(RELAYER_1);
         controller.takeFromSparkVault(address(spusdgVault), depositAmount);
-        vm.stopPrank();
 
         _assertUnlimitedRateLimit(takeKey);
 
@@ -154,9 +157,8 @@ contract E2ETests is Test {
         _assertUnlimitedRateLimit(depositKey);
 
         // Step 3: Controller deposits USDG into Morpho USDG Vault
-        vm.startPrank(RELAYER_1);
+        vm.prank(RELAYER_1);
         uint256 shares = controller.depositERC4626(address(morphoUsdgVault), depositAmount, 0);
-        vm.stopPrank();
 
         _assertUnlimitedRateLimit(depositKey);
 
@@ -170,9 +172,8 @@ contract E2ETests is Test {
         _assertUnlimitedRateLimit(redeemKey);
 
         // Step 4: Controller withdraws USDG from Morpho USDG Vault
-        vm.startPrank(RELAYER_1);
+        vm.prank(RELAYER_1);
         controller.redeemERC4626(MORPHO_USDG_VAULT, shares, 0);
-        vm.stopPrank();
 
         _assertUnlimitedRateLimit(redeemKey);
 

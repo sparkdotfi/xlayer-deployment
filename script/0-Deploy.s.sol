@@ -23,13 +23,11 @@ contract DeployLegacyPAU is Script {
     using stdJson     for string;
     using ScriptTools for string;
 
-    address admin = 0xB328BD52B61768DD525cF209ab6C1Ac688dcC547;  /// @dev Deployer
-
     function run() external {
         vm.startBroadcast();
 
         ControllerInstance memory instance = ForeignControllerDeploy.deployFull({
-            admin : admin,
+            admin : msg.sender,
             psm   : address(0),
             usdc  : address(0),
             cctp  : address(0)
@@ -83,7 +81,7 @@ contract DeploySparkVaultProxy is Script {
     function run() public {
         vm.setEnv("FOUNDRY_EXPORTS_OVERWRITE_LATEST", "true");
 
-        address admin         = 0xB328BD52B61768DD525cF209ab6C1Ac688dcC547;
+        address admin         = msg.sender;
         address asset         = 0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168;
         string  memory name   = "Spark Savings USDG";
         string  memory symbol = "spUSDG";

@@ -7,7 +7,7 @@ import { VmSafe } from "../lib/forge-std/src/Vm.sol";
 import { Ethereum } from "../lib/spark-address-registry/src/Ethereum.sol";
 
 import { ALMProxy }          from "../lib/spark-alm-controller/src/ALMProxy.sol";
-import { MainnetController } from "../lib/spark-alm-controller/src/MainnetController.sol";
+import { ForeignController } from "../lib/spark-alm-controller/src/ForeignController.sol";
 import { RateLimits }        from "../lib/spark-alm-controller/src/RateLimits.sol";
 import { RateLimitHelpers }  from "../lib/spark-alm-controller/src/RateLimitHelpers.sol";
 
@@ -42,7 +42,7 @@ contract ConfigTests is Test {
     address internal constant SPARK_VAULT_V2_IMPL = 0x797c58C9779D46a437D8f57908D6d56371A55F02;
 
     ALMProxy          internal almProxy;
-    MainnetController internal controller;
+    ForeignController internal controller;
     RateLimits        internal rateLimits;
     SparkVault        internal spusdgVault;
 
@@ -51,15 +51,19 @@ contract ConfigTests is Test {
     uint256 internal constant SIX_PCT_APY = 1.000000001847694957439350562e27;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ROBINHOOD_RPC_URL"));
+        vm.createSelectFork(vm.envString("ROBINHOOD_RPC_URL"), _getBlock());
 
         almProxy    = ALMProxy(payable(ALM_PROXY));
-        controller  = MainnetController(CONTROLLER);
+        controller  = ForeignController(CONTROLLER);
         rateLimits  = RateLimits(RATE_LIMITS);
         spusdgVault = SparkVault(SPUSDG_VAULT);
     }
 
-    function test_postDeployState() external {
+    function _getBlock() internal pure returns (uint256) {
+        return 59093;  // June 16, 2026
+    }
+
+    function test_postDeployState() external view {
         // ALMProxy/RateLimits roles
         assertEq(almProxy.hasRole(DEFAULT_ADMIN_ROLE, EXECUTOR),   true);
         assertEq(almProxy.hasRole(CONTROLLER_ROLE,    CONTROLLER), true);
@@ -102,7 +106,7 @@ contract ConfigTests is Test {
         assertEq(spusdgVault.hasRole(spusdgVault.TAKER_ROLE(),  DEPLOYER), false);
     }
 
-    function test_vault_config() external {
+    function test_vault_config() external view {
         assertEq(spusdgVault.asset(),             USDG);
         assertEq(spusdgVault.name(),              "Spark Savings USDG");
         assertEq(spusdgVault.symbol(),            "spUSDG");
@@ -110,9 +114,13 @@ contract ConfigTests is Test {
         assertEq(spusdgVault.maxVsr(),            SIX_PCT_APY);
         assertEq(spusdgVault.depositCap(),        500_000_000e6);
         assertEq(spusdgVault.getImplementation(), SPARK_VAULT_V2_IMPL);
+        assertEq(spusdgVault.rho(),               1780669356);
+        assertEq(spusdgVault.chi(),               1e27);
+        assertEq(spusdgVault.vsr(),               1e27);
+        assertEq(spusdgVault.minVsr(),            1e27);
     }
 
-    function test_rateLimits_config() external {
+    function test_rateLimits_config() external view {
         bytes32 takeKey = RateLimitHelpers.makeAddressKey(controller.LIMIT_SPARK_VAULT_TAKE(), address(spusdgVault));
 
         IRateLimits.RateLimitData memory rateLimit = rateLimits.getRateLimitData(takeKey);
@@ -142,7 +150,7 @@ contract ConfigTests is Test {
         assertEq(rateLimit.slope,     0);
     }
 
-    function test_controller_config() external {
+    function test_controller_config() external view {
         assertEq(address(controller.proxy()),      ALM_PROXY);
         assertEq(address(controller.rateLimits()), RATE_LIMITS);
         assertEq(address(controller.psm()),        address(0));
