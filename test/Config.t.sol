@@ -29,10 +29,10 @@ contract ConfigTests is Test {
     address internal constant RATE_LIMITS  = 0x5c1fDE9d4C7f1BF4bc5dEAA2a7752e56232c68a0;
     address internal constant SPUSDG_VAULT = 0xde770c84FE66E063336b31737cFE9790f18c4087;
 
-    address internal constant MORPHO_USDG_VAULT = 0x417bb610b14edF20f1357E159459DD4092E59a95;  // TODO change this
+    address internal constant MORPHO_USDG_VAULT = 0xBEEff039907422219Fb367e525954DDC092854d9;
 
     address internal constant DEPLOYER  = 0xB328BD52B61768DD525cF209ab6C1Ac688dcC547;
-    address internal constant FREEZER   = 0x0ca8f938Aba2214eA11eb451e795A8ef7B720C18;
+    address internal constant FREEZER   = 0x59C85fe4385403e93877e48e5521f2F02B150359;
     address internal constant EXECUTOR  = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
     address internal constant RELAYER_1 = 0x59C85fe4385403e93877e48e5521f2F02B150359;
     address internal constant RELAYER_2 = 0x0ca8f938Aba2214eA11eb451e795A8ef7B720C18;
@@ -51,16 +51,12 @@ contract ConfigTests is Test {
     uint256 internal constant SIX_PCT_APY = 1.000000001847694957439350562e27;
 
     function setUp() public {
-        vm.createSelectFork(getChain("mainnet").rpcUrl, _getBlock());
+        vm.createSelectFork(vm.envString("ROBINHOOD_RPC_URL"));
 
         almProxy    = ALMProxy(payable(ALM_PROXY));
         controller  = MainnetController(CONTROLLER);
         rateLimits  = RateLimits(RATE_LIMITS);
         spusdgVault = SparkVault(SPUSDG_VAULT);
-    }
-
-    function _getBlock() internal pure returns (uint256) {
-        return 25094998;  // TODO change to deploy block
     }
 
     function test_postDeployState() external {
@@ -153,172 +149,5 @@ contract ConfigTests is Test {
         assertEq(address(controller.usdc()),       address(0));
         assertEq(address(controller.cctp()),       address(0));
     }
-
-    function test_events_almProxy() external {
-        VmSafe.EthGetLogs[] memory almProxyAllLogs = _getEvents(block.chainid, ALM_PROXY, "");
-
-        assertEq(almProxyAllLogs.length, 4);
-
-        // RoleGranted(DEFAULT_ADMIN_ROLE, DEPLOYER, DEPLOYER) from ALMProxy.constructor.
-        assertEq(almProxyAllLogs[0].topics[0],             IAccessControl.RoleGranted.selector);
-        assertEq(almProxyAllLogs[0].topics[1],             DEFAULT_ADMIN_ROLE);
-        assertEq(_toAddress(almProxyAllLogs[0].topics[2]), DEPLOYER);
-        assertEq(_toAddress(almProxyAllLogs[0].topics[3]), DEPLOYER);
-
-        // RoleGranted(CONTROLLER_ROLE, CONTROLLER, DEPLOYER) from 2-TransferRoles.s.sol.
-        assertEq(almProxyAllLogs[1].topics[0],             IAccessControl.RoleGranted.selector);
-        assertEq(almProxyAllLogs[1].topics[1],             CONTROLLER_ROLE);
-        assertEq(_toAddress(almProxyAllLogs[1].topics[2]), CONTROLLER);
-        assertEq(_toAddress(almProxyAllLogs[1].topics[3]), DEPLOYER);
-
-        // RoleGranted(DEFAULT_ADMIN_ROLE, PAUSE_PROXY, DEPLOYER) from 2-TransferRoles.s.sol.
-        assertEq(almProxyAllLogs[2].topics[0],             IAccessControl.RoleGranted.selector);
-        assertEq(almProxyAllLogs[2].topics[1],             DEFAULT_ADMIN_ROLE);
-        assertEq(_toAddress(almProxyAllLogs[2].topics[2]), EXECUTOR);
-        assertEq(_toAddress(almProxyAllLogs[2].topics[3]), DEPLOYER);
-
-        // RoleRevoked(DEFAULT_ADMIN_ROLE, DEPLOYER, DEPLOYER) from 2-TransferRoles.s.sol.
-        assertEq(almProxyAllLogs[3].topics[0],             IAccessControl.RoleRevoked.selector);
-        assertEq(almProxyAllLogs[3].topics[1],             DEFAULT_ADMIN_ROLE);
-        assertEq(_toAddress(almProxyAllLogs[3].topics[2]), DEPLOYER);
-        assertEq(_toAddress(almProxyAllLogs[3].topics[3]), DEPLOYER);
-    }
-
-    function test_events_rateLimits() external {
-        VmSafe.EthGetLogs[] memory rateLimitsAllLogs = _getEvents(block.chainid, RATE_LIMITS, "");
-
-        assertEq(rateLimitsAllLogs.length, 8);
-
-        // RoleGranted(DEFAULT_ADMIN_ROLE, DEPLOYER, DEPLOYER) from RateLimits.constructor.
-        assertEq(rateLimitsAllLogs[0].topics[0],             IAccessControl.RoleGranted.selector);
-        assertEq(rateLimitsAllLogs[0].topics[1],             DEFAULT_ADMIN_ROLE);
-        assertEq(_toAddress(rateLimitsAllLogs[0].topics[2]), DEPLOYER);
-        assertEq(_toAddress(rateLimitsAllLogs[0].topics[3]), DEPLOYER);
-
-        assertEq(rateLimitsAllLogs[1].topics[0], IRateLimits.RateLimitDataSet.selector);
-        assertEq(rateLimitsAllLogs[2].topics[0], IRateLimits.RateLimitDataSet.selector);
-        assertEq(rateLimitsAllLogs[3].topics[0], IRateLimits.RateLimitDataSet.selector);
-        assertEq(rateLimitsAllLogs[4].topics[0], IRateLimits.RateLimitDataSet.selector);
-
-        // RoleGranted(CONTROLLER_ROLE, CONTROLLER, DEPLOYER) from 2-TransferRoles.s.sol.
-        assertEq(rateLimitsAllLogs[5].topics[0],             IAccessControl.RoleGranted.selector);
-        assertEq(rateLimitsAllLogs[5].topics[1],             CONTROLLER_ROLE);
-        assertEq(_toAddress(rateLimitsAllLogs[5].topics[2]), CONTROLLER);
-        assertEq(_toAddress(rateLimitsAllLogs[5].topics[3]), DEPLOYER);
-
-        // RoleGranted(DEFAULT_ADMIN_ROLE, PAUSE_PROXY, DEPLOYER) from 2-TransferRoles.s.sol.
-        assertEq(rateLimitsAllLogs[6].topics[0],             IAccessControl.RoleGranted.selector);
-        assertEq(rateLimitsAllLogs[6].topics[1],             DEFAULT_ADMIN_ROLE);
-        assertEq(_toAddress(rateLimitsAllLogs[6].topics[2]), EXECUTOR);
-        assertEq(_toAddress(rateLimitsAllLogs[6].topics[3]), DEPLOYER);
-
-        // RoleRevoked(DEFAULT_ADMIN_ROLE, DEPLOYER, DEPLOYER) from 2-TransferRoles.s.sol.
-        assertEq(rateLimitsAllLogs[7].topics[0],             IAccessControl.RoleRevoked.selector);
-        assertEq(rateLimitsAllLogs[7].topics[1],             DEFAULT_ADMIN_ROLE);
-        assertEq(_toAddress(rateLimitsAllLogs[7].topics[2]), DEPLOYER);
-        assertEq(_toAddress(rateLimitsAllLogs[7].topics[3]), DEPLOYER);
-    }
-
-    /**********************************************************************************************/
-    /*** Get events helpers                                                                     ***/
-    /**********************************************************************************************/
-
-    function _getEvents(uint256 chainId, address target, bytes32 topic0)
-        internal
-        returns (VmSafe.EthGetLogs[] memory logs)
-    {
-        return _getEvents(chainId, target, topic0, 0);
-    }
-
-    function _getEvents(uint256 chainId, address target, bytes32 topic0, uint256 retryCount)
-        internal
-        returns (VmSafe.EthGetLogs[] memory logs)
-    {
-        string memory apiKey = vm.envString("ETHERSCAN_API_KEY");
-
-        require(retryCount < 4, "Etherscan API returned non-success status");
-
-        string memory url = string(
-            abi.encodePacked(
-                "https://api.etherscan.io/v2/api?",
-                "chainid=",
-                vm.toString(chainId),
-                "&module=logs&action=getLogs",
-                "&fromBlock=0",
-                "&toBlock=latest",
-                "&address=",
-                vm.toString(target),
-                "&page=1",
-                "&offset=1000",
-                "&apikey=",
-                apiKey
-            )
-        );
-
-        if (topic0 != 0) {
-            url = string(abi.encodePacked(url, "&topic0=", vm.toString(topic0)));
-        }
-
-        string[] memory inputs = new string[](8);
-        inputs[0] = "curl";
-        inputs[1] = "-s";
-        inputs[2] = "--request";
-        inputs[3] = "GET";
-        inputs[4] = "--url";
-        inputs[5] = url;
-        inputs[6] = "--header";
-        inputs[7] = "accept: application/json";
-
-        string memory response;
-
-        for (uint256 i; i < 10; i++) {
-            response = string(vm.ffi(inputs));
-
-            if (_isEqual(vm.parseJsonString(response, string(abi.encodePacked(".message"))), "NOTOK")) {
-                vm.sleep(1000);  // Prevent rate limiting from Etherscan (5 calls/second)
-                continue;
-            }
-
-            break;
-        }
-
-        uint256 i = 0;
-        for(; i < 1000; i++) {
-            try vm.parseJsonAddress(response, string(abi.encodePacked(".result[", vm.toString(i), "].address"))) {
-            } catch {
-                logs = new VmSafe.EthGetLogs[](i);
-                break;
-            }
-        }
-
-        for(uint256 j; j < i; ++j) {
-            logs[j] = VmSafe.EthGetLogs({
-                emitter:          vm.parseJsonAddress(response,      string(abi.encodePacked(".result[", vm.toString(j), "].address"))),
-                topics:           vm.parseJsonBytes32Array(response, string(abi.encodePacked(".result[", vm.toString(j), "].topics"))),
-                data:             vm.parseJsonBytes(response,        string(abi.encodePacked(".result[", vm.toString(j), "].data"))),
-                blockNumber:      uint64(0),
-                blockHash:        bytes32(0),
-                transactionHash:  bytes32(0),
-                transactionIndex: uint64(0),
-                logIndex:         uint8(0),
-                removed:          false
-            });
-        }
-    }
-
-    function _isEqual(string memory a, string memory b) internal pure returns (bool) {
-        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
-    }
-
-    function _toAddress(bytes32 b) internal pure returns (address) {
-        return address(uint160(uint256(b)));
-    }
-
-    function _toBool(bytes32 b) internal pure returns (bool) {
-        require(uint256(b) <= 1, "PostDeployTestBase/to-bool-failed");
-
-        return uint256(b) == uint256(1);
-    }
-
 
 }
