@@ -13,3 +13,9 @@
 [submodule "lib/spark-address-registry"]
 	path = lib/spark-address-registry
 	url = https://github.com/marsfoundation/spark-address-registry
+[submodule "lib/private-xchain-helpers"]
+	path = lib/private-xchain-helpers
+	url = git@github.com:sparkdotfi/private-xchain-helpers
+[submodule "lib/spark-gov-relay"]
+	path = lib/spark-gov-relay
+	url = git@github.com:sparkdotfi/spark-gov-relay
