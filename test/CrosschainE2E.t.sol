@@ -129,7 +129,7 @@ contract CrosschainE2ETest is Test {
         setChain("robinhood_chain", ChainData({
             name:    "Robinhood Chain",
             chainId: 4663,
-            rpcUrl:  vm.envString("ROBINHOOD_RPC_URL")
+            rpcUrl:  vm.envString("RH_RPC_URL")
         }));
 
         robinhood = DomainHelpers.createFork(getChain("robinhood_chain"), ROBINHOOD_BLOCK_NUMBER);

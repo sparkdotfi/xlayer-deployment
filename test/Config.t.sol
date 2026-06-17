@@ -68,7 +68,7 @@ contract ConfigTests is Test {
     uint256 internal constant SIX_PCT_APY = 1.000000001847694957439350562e27;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ROBINHOOD_RPC_URL"), _getBlock());
+        vm.createSelectFork(vm.envString("RH_RPC_URL"), _getBlock());
 
         almProxy    = ALMProxy(payable(ALM_PROXY));
         controller  = ForeignController(CONTROLLER);
