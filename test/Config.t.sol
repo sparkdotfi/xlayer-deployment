@@ -17,6 +17,22 @@ import { IAccessControl } from "../lib/spark-alm-controller/lib/openzeppelin-con
 
 import { SparkVault } from "../lib/spark-vaults-v2/src/SparkVault.sol";
 
+interface IExecutor {
+
+    function delay() external view returns (uint256);
+
+    function gracePeriod() external view returns (uint256);
+
+}
+
+interface IReceiver {
+
+    function l1Authority() external view returns (address);
+
+    function target() external view returns (address);
+
+}
+
 contract ConfigTests is Test {
 
     bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
@@ -34,6 +50,7 @@ contract ConfigTests is Test {
     address internal constant DEPLOYER  = 0xB328BD52B61768DD525cF209ab6C1Ac688dcC547;
     address internal constant FREEZER   = 0x59C85fe4385403e93877e48e5521f2F02B150359;
     address internal constant EXECUTOR  = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
+    address internal constant RECEIVER  = 0xc12B1e59c5E337d5Acd2b4f0A9a27d9E5D7387E8;
     address internal constant RELAYER_1 = 0x59C85fe4385403e93877e48e5521f2F02B150359;
     address internal constant RELAYER_2 = 0x0ca8f938Aba2214eA11eb451e795A8ef7B720C18;
     address internal constant SETTER    = 0x59C85fe4385403e93877e48e5521f2F02B150359;
@@ -156,6 +173,16 @@ contract ConfigTests is Test {
         assertEq(address(controller.psm()),        address(0));
         assertEq(address(controller.usdc()),       address(0));
         assertEq(address(controller.cctp()),       address(0));
+    }
+
+    function test_executor_config() external view {
+        assertEq(IExecutor(EXECUTOR).delay(),       0);
+        assertEq(IExecutor(EXECUTOR).gracePeriod(), 7 days);
+    }
+
+    function test_receiver_config() external view {
+        assertEq(IReceiver(RECEIVER).l1Authority(), Ethereum.SPARK_PROXY);
+        assertEq(IReceiver(RECEIVER).target(),      EXECUTOR);
     }
 
 }
