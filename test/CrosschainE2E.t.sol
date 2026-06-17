@@ -142,6 +142,7 @@ contract CrosschainE2ETest is Test {
 
     function test_crosschainE2E_setVsrBounds() public {
         // Step 1: Deploy the payload on Robinhood that will call setVsrBounds when executed
+
         robinhood.selectFork();
 
         SetVsrBoundsPayload robinhoodChainPayload = new SetVsrBoundsPayload(
@@ -157,6 +158,7 @@ contract CrosschainE2ETest is Test {
         assertEq(ISparkVaultLike(SPUSDG_VAULT).maxVsr(), SIX_PCT_APY);
 
         // Step 2: Deploy the crosschain payload on mainnet that sends the message through the bridge
+
         mainnet.selectFork();
 
         RobinhoodCrosschainPayload crosschainPayload = new RobinhoodCrosschainPayload(
@@ -165,19 +167,23 @@ contract CrosschainE2ETest is Test {
         );
 
         // Step 3: L1_PAUSE_PROXY triggers L1_EXECUTOR to execute the crosschain payload.
+
         vm.prank(L1_PAUSE_PROXY);
         IL1Executor(L1_EXECUTOR).exec(
             address(crosschainPayload),
             abi.encodeWithSelector(RobinhoodCrosschainPayload.execute.selector)
         );
 
-        // Step 4: Relay the message to Robinhood.
+        // Step 4: Relay the message to Robinhood
+
         bridge.relayMessagesToDestination(true);
 
         // Step 5: Advance past the Executor's delay
+
         skip(executorDelay);
 
         // Step 6: Execute the queued message.
+
         IExecutor(EXECUTOR).execute(actionsSetId);
 
         assertEq(ISparkVaultLike(SPUSDG_VAULT).minVsr(), 1e27);

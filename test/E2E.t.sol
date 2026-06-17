@@ -100,7 +100,7 @@ contract E2ETests is Test {
         spusdgVault.setVsr(SIX_PCT_APY);
     }
 
-    function test_e2e() external {
+    function test_e2E() external {
         IERC4626 morphoUsdgVault = IERC4626(MORPHO_USDG_VAULT);
         IERC20   usdg            = IERC20(USDG);
 
@@ -108,12 +108,13 @@ contract E2ETests is Test {
 
         deal(USDG, USER, depositAmount);
 
+        // Step 1: User deposits USDG into the SPUSDG Vault
+
         assertEq(usdg.balanceOf(USER),        depositAmount);
         assertEq(spusdgVault.totalAssets(),   8.01e6);
         assertEq(spusdgVault.totalSupply(),   8.01e6);
         assertEq(spusdgVault.balanceOf(USER), 0);
 
-        // Step 1: User deposits USDG into the SPUSDG Vault
         vm.startPrank(USER);
         SafeERC20.safeIncreaseAllowance(usdg, SPUSDG_VAULT, depositAmount);
         spusdgVault.deposit(depositAmount, USER);
@@ -127,10 +128,6 @@ contract E2ETests is Test {
         assertEq(usdg.balanceOf(SPUSDG_VAULT),      depositAmount + 8.01e6);
         assertEq(usdg.balanceOf(address(almProxy)), 0);
 
-        bytes32 takeKey = RateLimitHelpers.makeAddressKey(controller.LIMIT_SPARK_VAULT_TAKE(), address(spusdgVault));
-
-        _assertUnlimitedRateLimit(takeKey);
-
         // Warp to show that there is no interest accruing yet.
         assertEq(spusdgVault.totalAssets(), depositAmount + 8.01e6);
 
@@ -139,6 +136,11 @@ contract E2ETests is Test {
         assertEq(spusdgVault.totalAssets(), depositAmount + 8.01e6);
 
         // Step 2: Controller takes USDG from the SPUSDG Vault
+
+        bytes32 takeKey = RateLimitHelpers.makeAddressKey(controller.LIMIT_SPARK_VAULT_TAKE(), address(spusdgVault));
+
+        _assertUnlimitedRateLimit(takeKey);
+
         vm.prank(RELAYER_1);
         controller.takeFromSparkVault(address(spusdgVault), depositAmount);
 
@@ -147,16 +149,14 @@ contract E2ETests is Test {
         assertEq(usdg.balanceOf(SPUSDG_VAULT),      8.01e6);
         assertEq(usdg.balanceOf(address(almProxy)), depositAmount);
 
-        assertEq(morphoUsdgVault.balanceOf(address(almProxy)), 0);
+        // Step 3: Controller deposits USDG into Morpho USDG Vault
 
-        vm.prank(SETTER);
-        spusdgVault.setVsr(ONE_PCT_APY);
+        assertEq(morphoUsdgVault.balanceOf(address(almProxy)), 0);
 
         bytes32 depositKey = RateLimitHelpers.makeAddressKey(controller.LIMIT_4626_DEPOSIT(), address(morphoUsdgVault));
 
         _assertUnlimitedRateLimit(depositKey);
 
-        // Step 3: Controller deposits USDG into Morpho USDG Vault
         vm.prank(RELAYER_1);
         uint256 shares = controller.depositERC4626(address(morphoUsdgVault), depositAmount, 0);
 
@@ -165,20 +165,34 @@ contract E2ETests is Test {
         assertEq(usdg.balanceOf(address(almProxy)),            0);
         assertEq(morphoUsdgVault.balanceOf(address(almProxy)), shares);
 
+        // Step 4: Set VSR and warp to show interest accrual
+
+        vm.prank(SETTER);
+        spusdgVault.setVsr(ONE_PCT_APY);
+
+        assertEq(spusdgVault.vsr(), ONE_PCT_APY);
+
+        assertEq(spusdgVault.totalAssets(), depositAmount + 8.01e6);
+
         vm.warp(block.timestamp + 1 days);
+
+        assertEq(spusdgVault.totalAssets(), depositAmount + 8.01e6 + 27.26177e6);
+
+        // Step 5: Controller withdraws USDG from Morpho USDG Vault
 
         bytes32 redeemKey = RateLimitHelpers.makeAddressKey(controller.LIMIT_4626_WITHDRAW(), address(morphoUsdgVault));
 
         _assertUnlimitedRateLimit(redeemKey);
 
-        // Step 4: Controller withdraws USDG from Morpho USDG Vault
         vm.prank(RELAYER_1);
         controller.redeemERC4626(MORPHO_USDG_VAULT, shares, 0);
 
         _assertUnlimitedRateLimit(redeemKey);
 
         assertEq(morphoUsdgVault.balanceOf(address(almProxy)), 0);
-        assertEq(usdg.balanceOf(address(almProxy)),            depositAmount - 1);
+        assertEq(usdg.balanceOf(address(almProxy)), depositAmount - 1);
+
+        // Step 6: Controller transfers USDG from ALMProxy to SPUSDG Vault
 
         // Deal 100e6 USDG to the ALMProxy to simulate accrued yield
         deal(USDG, address(almProxy), depositAmount + 100e6);
@@ -187,14 +201,14 @@ contract E2ETests is Test {
 
         _assertUnlimitedRateLimit(transferKey);
 
-        // Step 5: Controller transfers USDG from ALMProxy to SPUSDG Vault
         vm.startPrank(RELAYER_1);
         controller.transferAsset(USDG, address(spusdgVault), usdg.balanceOf(address(almProxy)));
         vm.stopPrank();
 
         _assertUnlimitedRateLimit(transferKey);
 
-        // Step 6: User withdraws USDG from the SPUSDG Vault
+        // Step 7: User withdraws USDG from the SPUSDG Vault
+
         vm.startPrank(USER);
         spusdgVault.redeem(spusdgVault.balanceOf(USER), USER, USER);
         vm.stopPrank();
