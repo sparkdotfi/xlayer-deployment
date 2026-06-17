@@ -190,7 +190,7 @@ contract E2ETests is Test {
         _assertUnlimitedRateLimit(redeemKey);
 
         assertEq(morphoUsdgVault.balanceOf(address(almProxy)), 0);
-        assertEq(usdg.balanceOf(address(almProxy)), depositAmount - 1);
+        assertEq(usdg.balanceOf(address(almProxy)),            depositAmount - 1);
 
         // Step 6: Controller transfers USDG from ALMProxy to SPUSDG Vault
 
@@ -201,11 +201,17 @@ contract E2ETests is Test {
 
         _assertUnlimitedRateLimit(transferKey);
 
+        assertEq(usdg.balanceOf(address(almProxy)),    depositAmount + 100e6);
+        assertEq(usdg.balanceOf(address(spusdgVault)), 8.01e6);
+
         vm.startPrank(RELAYER_1);
         controller.transferAsset(USDG, address(spusdgVault), usdg.balanceOf(address(almProxy)));
         vm.stopPrank();
 
         _assertUnlimitedRateLimit(transferKey);
+
+        assertEq(usdg.balanceOf(address(almProxy)),    0);
+        assertEq(usdg.balanceOf(address(spusdgVault)), depositAmount + 100e6 + 8.01e6);
 
         // Step 7: User withdraws USDG from the SPUSDG Vault
 
