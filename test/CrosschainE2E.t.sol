@@ -8,6 +8,8 @@ import { Bridge }                from "../lib/private-xchain-helpers/src/testing
 import { ArbitrumBridgeTesting } from "../lib/private-xchain-helpers/src/testing/bridges/ArbitrumBridgeTesting.sol";
 import { ArbitrumForwarder }     from "../lib/private-xchain-helpers/src/forwarders/ArbitrumForwarder.sol";
 
+import { Ethereum } from "../lib/spark-address-registry/src/Ethereum.sol";
+
 import { IExecutor } from "../lib/spark-gov-relay/src/interfaces/IExecutor.sol";
 
 interface IL1Executor {
@@ -24,6 +26,10 @@ interface ISparkVaultLike {
 
     function setVsrBounds(uint256 minVsr_, uint256 maxVsr_) external;
 
+}
+
+interface IInbox {
+    function setAllowList(address[] calldata accounts, bool[] calldata allowed) external;
 }
 
 contract SetVsrBoundsPayload {
@@ -54,7 +60,7 @@ contract RobinhoodCrosschainPayload {
         bridgeReceiver = _bridgeReceiver;
     }
 
-    address constant L1_CROSS_DOMAIN_ROBINHOOD_CHAIN = 0x59014b601E530494665888e73113734222457046;
+    address constant L1_CROSS_DOMAIN_ROBINHOOD_CHAIN = 0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D;
 
     function execute() external {
         ArbitrumForwarder.sendMessageL1toL2(
@@ -168,8 +174,21 @@ contract CrosschainE2ETest is Test {
 
         // Step 3: L1_PAUSE_PROXY triggers L1_EXECUTOR to execute the crosschain payload.
 
+        address inbox = 0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D;
+
+        address[] memory accounts = new address[](2);
+        accounts[0] = Ethereum.SPARK_PROXY;
+        accounts[1] = L1_PAUSE_PROXY;
+
+        bool[] memory allowed = new bool[](2);
+        allowed[0] = true;
+        allowed[1] = true;
+
+        vm.prank(0x552603b4bc1f5E896AF2854548D6380f45f1B4bf);
+        IInbox(inbox).setAllowList(accounts, allowed);
+
         vm.prank(L1_PAUSE_PROXY);
-        IL1Executor(L1_EXECUTOR).exec(
+        IL1Executor(Ethereum.SPARK_PROXY).exec(
             address(crosschainPayload),
             abi.encodeWithSelector(RobinhoodCrosschainPayload.execute.selector)
         );
