@@ -29,7 +29,9 @@ interface ISparkVaultLike {
 }
 
 interface IInbox {
-    function setAllowList(address[] calldata accounts, bool[] calldata allowed) external;
+
+    function setAllowListEnabled(bool enabled) external;
+
 }
 
 contract SetVsrBoundsPayload {
@@ -176,18 +178,8 @@ contract CrosschainE2ETest is Test {
 
         address inbox = 0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D;
 
-        address[] memory accounts = new address[](3);
-        accounts[0] = Ethereum.SPARK_PROXY;
-        accounts[1] = L1_PAUSE_PROXY;
-        accounts[2] = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
-
-        bool[] memory allowed = new bool[](3);
-        allowed[0] = true;
-        allowed[1] = true;
-        allowed[2] = true;
-
         vm.prank(0x552603b4bc1f5E896AF2854548D6380f45f1B4bf);
-        IInbox(inbox).setAllowList(accounts, allowed);
+        IInbox(inbox).setAllowListEnabled(false);
 
         vm.prank(L1_PAUSE_PROXY);
         IL1Executor(Ethereum.SPARK_PROXY).exec(
