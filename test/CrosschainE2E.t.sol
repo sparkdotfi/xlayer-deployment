@@ -162,9 +162,6 @@ contract CrosschainE2ETest is Test {
         uint256 executorDelay = IExecutor(EXECUTOR).delay();
         uint256 actionsSetId  = IExecutor(EXECUTOR).actionsSetCount();
 
-        assertEq(ISparkVaultLike(SPUSDG_VAULT).minVsr(), 1e27);
-        assertEq(ISparkVaultLike(SPUSDG_VAULT).maxVsr(), SIX_PCT_APY);
-
         // Step 2: Deploy the crosschain payload on mainnet that sends the message through the bridge
 
         mainnet.selectFork();
@@ -193,11 +190,14 @@ contract CrosschainE2ETest is Test {
 
         // Step 5: Advance past the Executor's delay
 
-        skip(executorDelay);
+        skip(0);  // Executor delay is 0
 
         // Step 6: Execute the queued message.
 
-        IExecutor(EXECUTOR).execute(actionsSetId);
+        assertEq(ISparkVaultLike(SPUSDG_VAULT).minVsr(), 1e27);
+        assertEq(ISparkVaultLike(SPUSDG_VAULT).maxVsr(), SIX_PCT_APY);
+
+        IExecutor(EXECUTOR).execute(0);  // This is the first payload.
 
         assertEq(ISparkVaultLike(SPUSDG_VAULT).minVsr(), 1e27);
         assertEq(ISparkVaultLike(SPUSDG_VAULT).maxVsr(), THREE_PCT_APY);

@@ -170,8 +170,7 @@ contract E2ETests is Test {
         vm.prank(SETTER);
         spusdgVault.setVsr(ONE_PCT_APY);
 
-        assertEq(spusdgVault.vsr(), ONE_PCT_APY);
-
+        assertEq(spusdgVault.vsr(),         ONE_PCT_APY);
         assertEq(spusdgVault.totalAssets(), depositAmount + 8.01e6);
 
         vm.warp(block.timestamp + 1 days);
