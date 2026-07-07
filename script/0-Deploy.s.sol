@@ -76,15 +76,15 @@ contract DeploySparkVaultProxy is Script {
     using ScriptTools for string;
     using stdJson     for string;
 
-    address impl  = 0x797c58C9779D46a437D8f57908D6d56371A55F02;
+    address impl  = 0xdCe929A335C75a1676EF5957A4D7a3b928C48820;
 
     function run() public {
         vm.setEnv("FOUNDRY_EXPORTS_OVERWRITE_LATEST", "true");
 
         address admin         = msg.sender;
-        address asset         = 0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168;
-        string  memory name   = "Spark Savings USDG";
-        string  memory symbol = "spUSDG";
+        address asset         = 0x779Ded0c9e1022225f8E0630b35a9b54bE713736;
+        string  memory name   = "Spark Savings USDT";
+        string  memory symbol = "spUSDT";
 
         // Deploy SparkVault proxy
         vm.startBroadcast();

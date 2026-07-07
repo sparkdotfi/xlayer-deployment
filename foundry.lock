@@ -28,5 +28,11 @@
       "name": "v1.0.1",
       "rev": "0a686ba2fcf874bc1542171a323779ba73ac2dc5"
     }
+  },
+  "lib/xchain-helpers": {
+    "tag": {
+      "name": "v1.2.0",
+      "rev": "1e362bfb547ef612b45260b659e3ea562a85f159"
+    }
   }
 }

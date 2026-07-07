@@ -43,38 +43,40 @@ contract Configure is Script {
     using stdJson     for string;
     using ScriptTools for string;
 
-    address internal constant DEPLOYER    = 0xB328BD52B61768DD525cF209ab6C1Ac688dcC547;
-    address internal constant EXECUTOR    = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
-    address internal constant FREEZER     = 0x59C85fe4385403e93877e48e5521f2F02B150359;
-    address internal constant PL_OPS_SAFE = 0x59C85fe4385403e93877e48e5521f2F02B150359;
-    address internal constant RELAYER_1   = 0x59C85fe4385403e93877e48e5521f2F02B150359;
-    address internal constant RELAYER_2   = 0x0ca8f938Aba2214eA11eb451e795A8ef7B720C18;
+    address internal constant DEPLOYER            = 0x23d43f3189Ab9CEBfFcC0352C0490387e3105FB3;
+    address internal constant EXECUTOR            = 0xCF5af6F53ceC74B791cb4182aC778ca9CD323510;
+    address internal constant FREEZER             = 0x90D8c80C028B4C09C0d8dcAab9bbB057F0513431;
+    address internal constant ALM_PROXY_FREEZABLE = 0x9449ed367C60ea757544fd990B57e1C2D0Ec3A94;
+    address internal constant RELAYER_1           = 0x8a25A24EDE9482C4Fc0738F99611BE58F1c839AB;
+    address internal constant RELAYER_2           = 0x9330edE0Fc6E3E0D47Ebf3C145efd569796aC7F5;
 
-    address internal constant SPUSDG_VAULT = 0xde770c84FE66E063336b31737cFE9790f18c4087;
+    address internal constant SPUSDT_VAULT = 0xc358c90D32375721Cb3924320Fdc2F8B694347Ca;
 
-    address internal constant ALM_PROXY       = 0xfD2fD4B046136B540A56C11c75ac679AE7d1dB24;
-    address internal constant ALM_RATE_LIMITS = 0x5c1fDE9d4C7f1BF4bc5dEAA2a7752e56232c68a0;
-    address internal constant ALM_CONTROLLER  = 0xcf8d58A6eeF2a1cae2Ce69bC463b1178FB76bA1E;
+    address internal constant USDT_OFT = 0x94BCCa6bdfd6A61817Ab0E960bFedE4984505554;
 
-    address internal constant MORPHO_USDG_VAULT = 0xBEEff039907422219Fb367e525954DDC092854d9;
+    address internal constant ALM_PROXY       = 0x83A914C361bB729EB6BEBC8C7bA993667A0E6Df8;
+    address internal constant ALM_RATE_LIMITS = 0x7F7E2286983994c4403Cf2B86758cE0e7bA666a8;
+    address internal constant ALM_CONTROLLER  = 0xf9187C99Ee842beABE8e2e346d958315BFc9331f;
 
     // > bc -l <<< 'scale=27; e( l(1.06)/(60 * 60 * 24 * 365) )'
     //   1.000000001847694957439350562
     uint256 internal constant SIX_PCT_APY = 1.000000001847694957439350562e27;
 
+    uint32 internal constant LZ_ENDPOINT_ETHEREUM = 30101;
+
     function run() external {
         vm.startBroadcast();
 
-        // Configure Spark Savings USDG Vault (SPUSDG)
+        // Configure Spark Savings USDT Vault (SPUSDT)
         _configureVaultsV2({
-            vault_        : SPUSDG_VAULT,
-            supplyCap     : 500_000_000e6,
+            vault_        : SPUSDT_VAULT,
+            supplyCap     : 750_000_000e6,
             minVsr        : 1e27,
             maxVsr        : SIX_PCT_APY
         });
 
         // Configure Legacy PAU ratelimits to deposit and withdraw from Spark Vault
-        ISparkVaultV2     vault      = ISparkVaultV2(SPUSDG_VAULT);
+        ISparkVaultV2     vault      = ISparkVaultV2(SPUSDT_VAULT);
         IRateLimits       rateLimits = IRateLimits(ALM_RATE_LIMITS);
         ForeignController controller = ForeignController(ALM_CONTROLLER);
 
@@ -93,27 +95,19 @@ contract Configure is Script {
             )
         );
 
-        rateLimits.setUnlimitedRateLimitData(
-            RateLimitHelpers.makeAddressKey(
-                controller.LIMIT_4626_DEPOSIT(),
-                MORPHO_USDG_VAULT
-            )
+        controller.setLayerZeroRecipient(
+            LZ_ENDPOINT_ETHEREUM,
+            bytes32(uint256(uint160(Ethereum.ALM_PROXY)))
         );
 
         rateLimits.setUnlimitedRateLimitData(
-            RateLimitHelpers.makeAddressKey(
-                controller.LIMIT_4626_WITHDRAW(),
-                MORPHO_USDG_VAULT
+            keccak256(
+                abi.encode(
+                    controller.LIMIT_LAYERZERO_TRANSFER(),
+                    USDT_OFT,
+                    LZ_ENDPOINT_ETHEREUM
+                )
             )
-        );
-
-        address morpho_vault = MORPHO_USDG_VAULT;
-        address asset        = IERC4626(morpho_vault).asset();
-
-        controller.setMaxExchangeRate(
-            morpho_vault,
-            1 * 10 ** IERC20Metadata(morpho_vault).decimals(),
-            10 * 10 ** IERC20Metadata(asset).decimals()
         );
 
         // Transfer admin role from deployer to Executor for SPUSDG vault v2
@@ -151,8 +145,8 @@ contract Configure is Script {
     ) internal {
         ISparkVaultV2 vault = ISparkVaultV2(vault_);
 
-        // Grant SETTER_ROLE to Phoenix Labs Ops Safe
-        vault.grantRole(vault.SETTER_ROLE(), PL_OPS_SAFE);
+        // Grant SETTER_ROLE to ALM Proxy Freezable
+        vault.grantRole(vault.SETTER_ROLE(), ALM_PROXY_FREEZABLE);
 
         // Grant TAKER_ROLE to Legacy PAU
         vault.grantRole(vault.TAKER_ROLE(), ALM_PROXY);

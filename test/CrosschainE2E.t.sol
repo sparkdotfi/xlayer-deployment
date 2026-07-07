@@ -3,10 +3,10 @@ pragma solidity ^0.8.25;
 
 import { Test } from "../lib/forge-std/src/Test.sol";
 
-import { Domain, DomainHelpers } from "../lib/private-xchain-helpers/src/testing/Domain.sol";
-import { Bridge }                from "../lib/private-xchain-helpers/src/testing/Bridge.sol";
-import { ArbitrumBridgeTesting } from "../lib/private-xchain-helpers/src/testing/bridges/ArbitrumBridgeTesting.sol";
-import { ArbitrumForwarder }     from "../lib/private-xchain-helpers/src/forwarders/ArbitrumForwarder.sol";
+import { Domain, DomainHelpers } from "../lib/xchain-helpers/src/testing/Domain.sol";
+import { Bridge }                from "../lib/xchain-helpers/src/testing/Bridge.sol";
+import { OptimismBridgeTesting } from "../lib/xchain-helpers/src/testing/bridges/OptimismBridgeTesting.sol";
+import { OptimismForwarder }     from "../lib/xchain-helpers/src/forwarders/OptimismForwarder.sol";
 
 import { Ethereum } from "../lib/spark-address-registry/src/Ethereum.sol";
 
@@ -28,12 +28,6 @@ interface ISparkVaultLike {
 
 }
 
-interface IInbox {
-
-    function setAllowListEnabled(bool enabled) external;
-
-}
-
 contract SetVsrBoundsPayload {
 
     address public immutable vault;
@@ -52,7 +46,7 @@ contract SetVsrBoundsPayload {
 
 }
 
-contract RobinhoodCrosschainPayload {
+contract XLayerCrosschainPayload {
 
     address public immutable targetPayload;
     address public immutable bridgeReceiver;
@@ -62,16 +56,12 @@ contract RobinhoodCrosschainPayload {
         bridgeReceiver = _bridgeReceiver;
     }
 
-    address constant L1_CROSS_DOMAIN_ROBINHOOD_CHAIN = 0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D;
-
     function execute() external {
-        ArbitrumForwarder.sendMessageL1toL2(
-            L1_CROSS_DOMAIN_ROBINHOOD_CHAIN,
+        OptimismForwarder.sendMessageL1toL2(
+            OptimismForwarder.L1_CROSS_DOMAIN_XLAYER,
             bridgeReceiver,
             _encodeCrosschainExecutionMessage(),
-            1_000_000,
-            1 gwei,
-            block.basefee + 10 gwei
+            1_000_000
         );
     }
 
@@ -106,16 +96,16 @@ contract RobinhoodCrosschainPayload {
 contract CrosschainE2ETest is Test {
 
     using DomainHelpers         for Domain;
-    using ArbitrumBridgeTesting for Bridge;
+    using OptimismBridgeTesting for Bridge;
 
     // Ethereum mainnet governance contracts
     address constant L1_EXECUTOR    = 0x3300f198988e4C9C63F75dF86De36421f06af8c4;
     address constant L1_PAUSE_PROXY = 0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB;
 
-    // Robinhood chain deployed contracts
-    address constant EXECUTOR        = 0x826AEaeee9233fA8Ba199518dd8621A5962b1D02;
-    address constant BRIDGE_RECEIVER = 0xc12B1e59c5E337d5Acd2b4f0A9a27d9E5D7387E8;
-    address constant SPUSDG_VAULT    = 0xde770c84FE66E063336b31737cFE9790f18c4087;
+    // XLayer deployed contracts
+    address constant EXECUTOR        = 0xCF5af6F53ceC74B791cb4182aC778ca9CD323510;
+    address constant BRIDGE_RECEIVER = 0x4bd50B9c00Ae19e8B59723F27645C7A5cCe7a4A0;
+    address constant SPUSDT_VAULT    = 0xc358c90D32375721Cb3924320Fdc2F8B694347Ca;
 
     // > bc -l <<< 'scale=27; e( l(1.06)/(60 * 60 * 24 * 365) )'
     //   1.000000001847694957439350562
@@ -125,66 +115,55 @@ contract CrosschainE2ETest is Test {
     //   1.000000000936749144827786671
     uint256 constant THREE_PCT_APY = 1.000000000936749144827786671e27;
 
-    uint256 constant ROBINHOOD_BLOCK_NUMBER = 59093;
-
     Domain mainnet;
-    Domain robinhood;
+    Domain xlayer;
     Bridge bridge;
 
     function setUp() public {
         mainnet = DomainHelpers.createFork(getChain("mainnet"));
 
-        setChain("robinhood_chain", ChainData({
-            name:    "Robinhood Chain",
-            chainId: 4663,
-            rpcUrl:  vm.envString("RH_RPC_URL")
+        setChain("xlayer", ChainData({
+            name:    "X Layer",
+            chainId: 196,
+            rpcUrl:  "https://rpc.xlayer.tech"
         }));
 
-        robinhood = DomainHelpers.createFork(getChain("robinhood_chain"), ROBINHOOD_BLOCK_NUMBER);
+        xlayer = DomainHelpers.createFork(getChain("xlayer"));
 
         mainnet.selectFork();
-        vm.deal(L1_EXECUTOR, 0.01 ether);
 
-        bridge = ArbitrumBridgeTesting.createNativeBridge(mainnet, robinhood);
+        bridge = OptimismBridgeTesting.createNativeBridge(mainnet, xlayer);
     }
 
     function test_crosschainE2E_setVsrBounds() public {
-        // Step 1: Deploy the payload on Robinhood that will call setVsrBounds when executed
+        // Step 1: Deploy the payload on XLayer that will call setVsrBounds when executed
 
-        robinhood.selectFork();
+        xlayer.selectFork();
 
-        SetVsrBoundsPayload robinhoodChainPayload = new SetVsrBoundsPayload(
-            SPUSDG_VAULT,
+        SetVsrBoundsPayload xlayerPayload = new SetVsrBoundsPayload(
+            SPUSDT_VAULT,
             1e27,
             THREE_PCT_APY
         );
-
-        uint256 executorDelay = IExecutor(EXECUTOR).delay();
-        uint256 actionsSetId  = IExecutor(EXECUTOR).actionsSetCount();
 
         // Step 2: Deploy the crosschain payload on mainnet that sends the message through the bridge
 
         mainnet.selectFork();
 
-        RobinhoodCrosschainPayload crosschainPayload = new RobinhoodCrosschainPayload(
-            address(robinhoodChainPayload),
+        XLayerCrosschainPayload crosschainPayload = new XLayerCrosschainPayload(
+            address(xlayerPayload),
             BRIDGE_RECEIVER
         );
 
         // Step 3: L1_PAUSE_PROXY triggers L1_EXECUTOR to execute the crosschain payload.
 
-        address inbox = 0x1A07cc4BD17E0118BdB54D70990D2158AbAD7a2D;
-
-        vm.prank(0x552603b4bc1f5E896AF2854548D6380f45f1B4bf);
-        IInbox(inbox).setAllowListEnabled(false);
-
         vm.prank(L1_PAUSE_PROXY);
         IL1Executor(Ethereum.SPARK_PROXY).exec(
             address(crosschainPayload),
-            abi.encodeWithSelector(RobinhoodCrosschainPayload.execute.selector)
+            abi.encodeWithSelector(XLayerCrosschainPayload.execute.selector)
         );
 
-        // Step 4: Relay the message to Robinhood
+        // Step 4: Relay the message to XLayer
 
         bridge.relayMessagesToDestination(true);
 
@@ -194,13 +173,13 @@ contract CrosschainE2ETest is Test {
 
         // Step 6: Execute the queued message.
 
-        assertEq(ISparkVaultLike(SPUSDG_VAULT).minVsr(), 1e27);
-        assertEq(ISparkVaultLike(SPUSDG_VAULT).maxVsr(), SIX_PCT_APY);
+        assertEq(ISparkVaultLike(SPUSDT_VAULT).minVsr(), 1e27);
+        assertEq(ISparkVaultLike(SPUSDT_VAULT).maxVsr(), SIX_PCT_APY);
 
-        IExecutor(EXECUTOR).execute(0);  // This is the first payload.
+        IExecutor(EXECUTOR).execute(0);  // Execute the first action in the set.
 
-        assertEq(ISparkVaultLike(SPUSDG_VAULT).minVsr(), 1e27);
-        assertEq(ISparkVaultLike(SPUSDG_VAULT).maxVsr(), THREE_PCT_APY);
+        assertEq(ISparkVaultLike(SPUSDT_VAULT).minVsr(), 1e27);
+        assertEq(ISparkVaultLike(SPUSDT_VAULT).maxVsr(), THREE_PCT_APY);
     }
 
 }
