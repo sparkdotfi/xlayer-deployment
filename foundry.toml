@@ -11,5 +11,8 @@ fs_permissions = [
 ]
 evm_version = 'cancun'
 ffi = true
+libraries = [
+    "lib/spark-alm-controller/src/libraries/LayerZeroLib.sol:LayerZeroLib:0xa44a27901ee51d657f59c75a61521e332cdc2e2e"
+]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
