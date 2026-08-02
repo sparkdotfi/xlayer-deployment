@@ -17,10 +17,22 @@
       "rev": "984ec546fb2c98ed729ae91d2d73e97dedbf111f"
     }
   },
+  "lib/spark-gov-relay": {
+    "tag": {
+      "name": "v1.0.1",
+      "rev": "5c166763464802a9f985fa50560c9e9fb0cf6c2b"
+    }
+  },
   "lib/spark-vaults-v2": {
     "tag": {
       "name": "v1.0.1",
       "rev": "0a686ba2fcf874bc1542171a323779ba73ac2dc5"
+    }
+  },
+  "lib/xchain-helpers": {
+    "tag": {
+      "name": "v1.2.0",
+      "rev": "1e362bfb547ef612b45260b659e3ea562a85f159"
     }
   }
 }
