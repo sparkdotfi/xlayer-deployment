@@ -19,3 +19,5 @@ docs/
 .env
 .env.*
 !.env.example
+oklink-translator/node_modules
+*.pem
